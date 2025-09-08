@@ -1,16 +1,11 @@
 import os
 from sys import api_version
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, Depends
+from helpers import Settings, get_settings
 
-base_router = APIRouter(prefix="/v1", tags=["v1"])
+base_router = APIRouter(prefix="/v1")
 
 
 @base_router.get("/")
-def welcome_message():
-    # get the env variables
-    app_name = os.getenv("APP_NAME")
-    app_version = os.getenv("APP_VERSION")
-    return {
-        "APPName": app_name,
-        "APPVersion": app_version,
-    }
+async def welcome():
+    return {"Hello Ahmed"}

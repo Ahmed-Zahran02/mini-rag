@@ -1,9 +1,10 @@
 from typing import Optional
 from fastapi import FastAPI
-from dotenv import load_dotenv
+from fastapi.routing import APIRouter
+from routes import base
+from routes import data
 
-load_dotenv()  # take environment variables from .env
-from routes import base  # it needs the .env variables
 
 app = FastAPI()
 app.include_router(base.base_router)
+app.include_router(data.data_router)

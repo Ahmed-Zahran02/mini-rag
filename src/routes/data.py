@@ -9,13 +9,13 @@ import aiofiles
 import logging
 
 data_router = APIRouter(prefix="/v1/data")
-# add logging configuration to show only error messages 
-logger = logging.getLogger("uvicorn.error") 
+# add logging configuration to show only error messages
+logger = logging.getLogger("uvicorn.error")
 
 
-@data_router.post("/upload/{file_id}")
+@data_router.post("/upload/{project_id}")
 async def upload_file(
-    file_id: str, file: UploadFile, app_settings: Settings = Depends(get_settings)
+    project_id: str, file: UploadFile, app_settings: Settings = Depends(get_settings)
 ):
     data_controller = DataController()
     result, signal = data_controller.validate_uploaded_file(file=file)
@@ -26,9 +26,9 @@ async def upload_file(
             content={"message": signal},
         )
     # Save the file to the specified directory
-    project_path = ProjectController().get_project_path(file_name=file_id)
-    file_path = data_controller.generate_unique_filename(
-        original_filename=file.filename, file_name=file_id
+    project_path = ProjectController().get_project_path(file_name=project_id)
+    file_path, file_id = data_controller.generate_unique_filepath(
+        original_filename=file.filename, file_name=project_id
     )
 
     # Write the file in chunks to avoid memory issues with large files
@@ -44,5 +44,8 @@ async def upload_file(
         )
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content={"message": ResponseSignal.FILE_UPLOAD_SUCCESS.value},
+        content={
+            "message": ResponseSignal.FILE_UPLOAD_SUCCESS.value,
+            "file_id": file_id,
+        },
     )

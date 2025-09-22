@@ -3,7 +3,7 @@ import os
 from fastapi import FastAPI, APIRouter, Depends, UploadFile, status
 from fastapi.responses import JSONResponse
 from helpers import Settings, get_settings
-from controllers import DataController, ProjectController
+from controllers import DataController, ProjectController, ProcessController
 from models import ResponseSignal
 import aiofiles
 import logging
@@ -55,6 +55,34 @@ async def upload_file(
 
 ## Endpoint to process a file
 @data_router.post("/process/{project_id}")
-async def process_file(project_id: str, data: DataSchema):
-    project_id = data.file_id
-    return {"file_id": project_id}
+async def process_file(project_id: str, data_schema: DataSchema):
+    process_controller = ProcessController(project_id=project_id)
+    file_content, signal = process_controller.get_file_content(
+        file_id=data_schema.file_id
+    )
+    if not file_content:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"message": signal},
+        )
+    try:
+        chunks = process_controller.process_file(
+            file_content=file_content,
+            file_id=data_schema.file_id,
+            chunk_size=data_schema.chunk_size,
+            chunk_overlap=data_schema.overlap,
+        )
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "message": ResponseSignal.PROCESSING_SUCCESS.value,
+                "chunks": [chunk.dict() for chunk in chunks],
+            },
+        )
+    except Exception as e:
+        logger.error(f"Error processing file {data_schema.file_id}: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"message": ResponseSignal.PROCESSING_FAILURE.value},
+        )
+    

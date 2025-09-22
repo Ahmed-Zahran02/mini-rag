@@ -2,6 +2,6 @@ from enum import Enum
 
 
 class ProcessingType(Enum):
-    TXT = "txt"
+    TXT = ".txt"
     PDF = "pdf"
     DOCX = "docx"

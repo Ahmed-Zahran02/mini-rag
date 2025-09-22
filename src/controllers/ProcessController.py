@@ -1,7 +1,10 @@
+import re
+from typing_extensions import Optional
 from .BaseController import BaseController
 from .ProjectController import ProjectController
 import os
 from langchain.document_loaders import TextLoader, PyMuPDFLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from models import ProcessingType, ResponseSignal
 
 
@@ -26,7 +29,7 @@ class ProcessController(BaseController):
         else:
             raise ValueError(ResponseSignal.FILE_TYPE_NOT_SUPPORTED.value)
 
-    def process_file(self, file_id: str):
+    def get_file_content(self, file_id: str):
         file_path = os.path.join(self.project_path, file_id)
         if not os.path.exists(file_path):
             return None, ResponseSignal.FILE_NOT_FOUND.value
@@ -38,3 +41,16 @@ class ProcessController(BaseController):
             return None, str(ve)
         except Exception as e:
             return None, str(e)
+
+    def process_file(
+        self,
+        file_content: list,
+        file_id: str,
+        chunk_size: int = 100,
+        chunk_overlap: int = 20,
+    ):
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size, chunk_overlap=chunk_overlap
+        )
+        chunks = text_splitter.split_documents(file_content)
+        return chunks

@@ -7,12 +7,14 @@ from controllers import DataController, ProjectController
 from models import ResponseSignal
 import aiofiles
 import logging
+from .schemas import DataSchema
 
 data_router = APIRouter(prefix="/v1/data")
 # add logging configuration to show only error messages
 logger = logging.getLogger("uvicorn.error")
 
 
+## Endpoint to upload a file
 @data_router.post("/upload/{project_id}")
 async def upload_file(
     project_id: str, file: UploadFile, app_settings: Settings = Depends(get_settings)
@@ -49,3 +51,10 @@ async def upload_file(
             "file_id": file_id,
         },
     )
+
+
+## Endpoint to process a file
+@data_router.post("/process/{project_id}")
+async def process_file(project_id: str, data: DataSchema):
+    project_id = data.file_id
+    return {"file_id": project_id}

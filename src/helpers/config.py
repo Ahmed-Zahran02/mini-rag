@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     FILE_MAX_SIZE: int  # in MB
     DATA_DIR: Path
     CHUNK_SIZE: int  # 500 KB
+    DATABASE_URL: str
+    DATABASE_NAME: str
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 

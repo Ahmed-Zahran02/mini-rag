@@ -1,5 +1,4 @@
 import os
-from sys import api_version
 from fastapi import FastAPI, APIRouter, Depends
 from helpers import Settings, get_settings
 

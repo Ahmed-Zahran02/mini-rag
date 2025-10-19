@@ -6,5 +6,5 @@ base_router = APIRouter(prefix="/v1")
 
 
 @base_router.get("/")
-async def welcome():
+async def checkHealth():
     return {"Hello Ahmed"}

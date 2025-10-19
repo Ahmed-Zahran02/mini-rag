@@ -1,12 +1,15 @@
-from inspect import ArgInfo
-import os
-from fastapi import FastAPI, APIRouter, Depends, UploadFile, status
-from fastapi.responses import JSONResponse
-from helpers import Settings, get_settings
-from controllers import DataController, ProjectController, ProcessController
-from models import ResponseSignal
-import aiofiles
 import logging
+
+import aiofiles
+from bson import ObjectId
+from fastapi import APIRouter, Depends, Request, UploadFile, status
+from fastapi.responses import JSONResponse
+
+from controllers import DataController, ProcessController, ProjectController
+from helpers import Settings, get_settings
+from models import ChunkModel, ProjectModel, ResponseSignal
+from models.db_schema import DataChunk
+
 from .schemas import DataSchema
 
 data_router = APIRouter(prefix="/v1/data")
@@ -17,8 +20,14 @@ logger = logging.getLogger("uvicorn.error")
 ## Endpoint to upload a file
 @data_router.post("/upload/{project_id}")
 async def upload_file(
-    project_id: str, file: UploadFile, app_settings: Settings = Depends(get_settings)
+    request: Request,
+    project_id: str,
+    file: UploadFile,
+    app_settings: Settings = Depends(get_settings),
 ):
+    project_model = ProjectModel(db_client=request.app.state.db_client)
+    project = await project_model.get_project_or_create_one(project_id=project_id)
+
     data_controller = DataController()
     result, signal = data_controller.validate_uploaded_file(file=file)
 
@@ -49,13 +58,14 @@ async def upload_file(
         content={
             "message": ResponseSignal.FILE_UPLOAD_SUCCESS.value,
             "file_id": file_id,
+            "project_id": project.project_id,
         },
     )
 
 
 ## Endpoint to process a file
 @data_router.post("/process/{project_id}")
-async def process_file(project_id: str, data_schema: DataSchema):
+async def process_file(project_id: str, data_schema: DataSchema, request: Request):
     process_controller = ProcessController(project_id=project_id)
     file_content, signal = process_controller.get_file_content(
         file_id=data_schema.file_id
@@ -65,18 +75,43 @@ async def process_file(project_id: str, data_schema: DataSchema):
             status_code=status.HTTP_404_NOT_FOUND,
             content={"message": signal},
         )
+
     try:
+        chunk_model = ChunkModel(db_client=request.app.state.db_client)
+
+        project_model = ProjectModel(db_client=request.app.state.db_client)
+        project = await project_model.get_project_or_create_one(project_id=project_id)
+        
+        if data_schema.de_reset:
+            # Clear existing chunks for the project
+            _ = await chunk_model.clear_chunks_by_project_id(
+                project_id=project.project_id  # pyright: ignore[reportArgumentType]
+            )
+            
         chunks = process_controller.process_file(
             file_content=file_content,
             file_id=data_schema.file_id,
-            chunk_size=data_schema.chunk_size,
-            chunk_overlap=data_schema.overlap,
+            chunk_size=data_schema.chunk_size,  # pyright: ignore[reportArgumentType]
+            chunk_overlap=data_schema.overlap,  # pyright: ignore[reportArgumentType]
         )
+        file_chunks = [
+            DataChunk(
+                _id=ObjectId(),
+                chunk_content=chunk.page_content,
+                chunk_metadata=chunk.metadata,
+                chunk_order=i + 1,
+                chunk_type="text",
+                chunk_project_id=project.project_id,  # pyright: ignore[reportArgumentType]
+            )
+            for i, chunk in enumerate(chunks)
+        ]
+
+        result = await chunk_model.insert_many_chunks(chunks=file_chunks)
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content={
                 "message": ResponseSignal.PROCESSING_SUCCESS.value,
-                "chunks": [chunk.dict() for chunk in chunks],
+                "chunks data": result,
             },
         )
     except Exception as e:

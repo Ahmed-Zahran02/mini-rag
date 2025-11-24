@@ -55,11 +55,13 @@ class ChunkModel(BaseDataModel):
         except Exception as e:
             logging.error(f"Error inserting multiple data chunks: {e}")
             raise e
-    
+
     async def clear_chunks_by_project_id(self, project_id: str) -> int:
         try:
             result = await self.collection.delete_many({"chunk_project_id": project_id})
-            logging.info(f"Deleted {result.deleted_count} chunks for project_id {project_id}")
+            logging.info(
+                f"Deleted {result.deleted_count} chunks for project_id {project_id}"
+            )
             return result.deleted_count
         except Exception as e:
             logging.error(f"Error deleting chunks by project id: {e}")

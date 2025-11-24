@@ -81,13 +81,13 @@ async def process_file(project_id: str, data_schema: DataSchema, request: Reques
 
         project_model = ProjectModel(db_client=request.app.state.db_client)
         project = await project_model.get_project_or_create_one(project_id=project_id)
-        
+
         if data_schema.de_reset:
             # Clear existing chunks for the project
             _ = await chunk_model.clear_chunks_by_project_id(
                 project_id=project.project_id  # pyright: ignore[reportArgumentType]
             )
-            
+
         chunks = process_controller.process_file(
             file_content=file_content,
             file_id=data_schema.file_id,

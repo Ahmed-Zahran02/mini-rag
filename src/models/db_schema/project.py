@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field, validator
 
 
 class Project(BaseModel):
-    id: ObjectId | None = Field(
+    id: ObjectId = Field(
         default_factory=ObjectId,
         alias="_id",
         description="The unique identifier of the project",
@@ -18,3 +18,7 @@ class Project(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+
+    @classmethod
+    def get_indexes(cls):
+        return [{"key": [("project_id", 1)], "name": "idx_project_id", "unique": True}]

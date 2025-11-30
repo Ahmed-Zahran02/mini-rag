@@ -1,6 +1,7 @@
+from typing import Optional
+
 from bson import ObjectId
 from pydantic import BaseModel, Field
-from typing import Optional
 
 
 class DataChunk(BaseModel):
@@ -17,3 +18,13 @@ class DataChunk(BaseModel):
 
     class Config:
         arbitrary_types_allowed: bool = True
+
+    @classmethod
+    def get_indexes(cls):
+        return [
+            {
+                "key": [("chunk_project_id", 1)],
+                "name": "idx_chunk_project_id",
+                "unique": False,
+            }
+        ]

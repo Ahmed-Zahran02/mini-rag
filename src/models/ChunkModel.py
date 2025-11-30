@@ -1,11 +1,9 @@
-from re import T
-
-from bson.objectid import ObjectId
-from .db_schema import DataChunk
-from .BaseDataModel import BaseDataModel
-from .enums import DataBaseEnum
 import logging
 from pymongo import InsertOne
+
+from .BaseDataModel import BaseDataModel
+from .db_schema import DataChunk
+from .enums import DataBaseEnum
 
 
 class ChunkModel(BaseDataModel):
@@ -14,6 +12,27 @@ class ChunkModel(BaseDataModel):
         self.collection = self.db_client[  # pyright: ignore[reportIndexIssue]
             DataBaseEnum.COLLECTION_CHUNK_NAME.value
         ]
+
+    async def init_collection_indexes(self):
+        """Initialize indexes for the data chunk collection."""
+        all_collections = (
+            await self.db_client.list_collection_names()
+        )  # pyright: ignore[reportAttributeAccessIssue]
+        if DataBaseEnum.COLLECTION_CHUNK_NAME.value not in all_collections:
+            await self.db_client.create_collection(  # pyright: ignore[reportAttributeAccessIssue]
+                DataBaseEnum.COLLECTION_CHUNK_NAME.value
+            )
+            indexes = DataChunk.get_indexes()
+            for index in indexes:
+                self.collection.create_index(
+                    index["key"], name=index["name"], unique=index.get("unique", False)
+                )
+
+    @classmethod
+    async def create_instance(cls, db_client):
+        instance = cls(db_client)
+        await instance.init_collection_indexes()
+        return instance
 
     async def create_data_chunk(self, chunk: DataChunk) -> DataChunk:
         try:

@@ -1,5 +1,5 @@
 from bson.objectid import ObjectId
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class Project(BaseModel):
@@ -10,7 +10,7 @@ class Project(BaseModel):
     )
     project_id: str = Field(..., min_length=2, max_length=100)
 
-    @validator("project_id")
+    @field_validator("project_id")
     def name_must_be_alphanum(cls, value):
         if not value[0].isalnum():
             raise ValueError("Name must be alphanumeric")

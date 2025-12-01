@@ -16,6 +16,9 @@ class Asset(BaseModel):
     asset_type: str = Field(..., min_length=1)
     asset_size: int = Field(ge=0, description="Size of the asset in bytes")
 
+    class Config:
+        arbitrary_types_allowed: bool = True
+
     @classmethod
     def get_indexes(cls):
         return [

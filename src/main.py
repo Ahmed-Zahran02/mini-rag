@@ -6,7 +6,7 @@ from helpers import get_settings
 import uvicorn
 
 
-@app.asynccontextmanager
+@asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
     app.state.connection = AsyncIOMotorClient(settings.DATABASE_URL)
@@ -20,6 +20,5 @@ app.include_router(base.base_router)
 app.include_router(data.data_router)
 
 
-# app = FastAPI()
 if __name__ == "__main__":
     uvicorn.run("main:app", reload=True)

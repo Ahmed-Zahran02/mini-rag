@@ -13,7 +13,7 @@ async def lifespan(app: FastAPI):
     app.state.db_client = app.state.connection[settings.DATABASE_NAME]
     yield
     app.state.connection.close()
-
+  
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(base.base_router)

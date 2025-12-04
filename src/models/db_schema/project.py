@@ -8,7 +8,7 @@ class Project(BaseModel):
         alias="_id",
         description="The unique identifier of the project",
     )
-    project_id: str = Field(..., min_length=2, max_length=100)
+    project_id: str = Field(..., min_length=1, max_length=100)
 
     @field_validator("project_id")
     def name_must_be_alphanum(cls, value):

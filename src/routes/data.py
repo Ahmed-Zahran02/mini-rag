@@ -25,9 +25,9 @@ async def upload_file(
     file: UploadFile,
     app_settings: Settings = Depends(get_settings),
 ):
-    project_model = ProjectModel(db_client=request.app.state.db_client)
+    project_model = ProjectModel.create_instance(db_client=request.app.state.db_client)
     project = await project_model.get_project_or_create_one(project_id=project_id)
-
+    
     data_controller = DataController()
     result, signal = data_controller.validate_uploaded_file(file=file)
 
@@ -77,12 +77,12 @@ async def process_file(project_id: str, data_schema: DataSchema, request: Reques
         )
 
     try:
-        chunk_model = ChunkModel(db_client=request.app.state.db_client)
-
-        project_model = ProjectModel(db_client=request.app.state.db_client)
+        chunk_model = ChunkModel.create_instance(db_client=request.app.state.db_client)
+        
+        project_model = ProjectModel.create_instance(db_client=request.app.state.db_client)
         project = await project_model.get_project_or_create_one(project_id=project_id)
 
-        if data_schema.de_reset:
+        if data_schema.do_reset: #pyright: ignore[reportArgumentType]
             # Clear existing chunks for the project
             _ = await chunk_model.clear_chunks_by_project_id(
                 project_id=project.project_id  # pyright: ignore[reportArgumentType]

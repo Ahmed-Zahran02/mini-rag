@@ -1,14 +1,14 @@
 import logging
+import os
 
 import aiofiles
 from bson import ObjectId
+from controllers import DataController, ProcessController, ProjectController
 from fastapi import APIRouter, Depends, Request, UploadFile, status
 from fastapi.responses import JSONResponse
-
-from controllers import DataController, ProcessController, ProjectController
 from helpers import Settings, get_settings
-from models import ChunkModel, ProjectModel, ResponseSignal
-from models.db_schema import DataChunk
+from models import AssetModel, ChunkModel, ProjectModel, ResponseSignal
+from models.db_schema import DataChunk, Asset
 
 from .schemas import DataSchema
 
@@ -25,9 +25,26 @@ async def upload_file(
     file: UploadFile,
     app_settings: Settings = Depends(get_settings),
 ):
-    project_model = ProjectModel.create_instance(db_client=request.app.state.db_client)
+    project_model = await ProjectModel.create_instance(
+        db_client=request.app.state.db_client
+    )
     project = await project_model.get_project_or_create_one(project_id=project_id)
-    
+    asset_model = await AssetModel.create_instance(
+        db_client=request.app.state.db_client
+    )
+    asset = Asset(
+        asset_project_id=project.id,
+        asset_name=file.filename,
+        asset_type=file.content_type,
+        asset_size=os.fstat(file.file.fileno()).st_size,
+    )
+    asset_record = await asset_model.create_asset(Asset(
+        asset_project_id=project.id,
+        asset_name=file.filename,
+        asset_type=file.content_type,
+        asset_size=os.fstat(file.file.fileno()).st_size,
+    ))
+    # Validate the uploaded file
     data_controller = DataController()
     result, signal = data_controller.validate_uploaded_file(file=file)
 
@@ -78,11 +95,13 @@ async def process_file(project_id: str, data_schema: DataSchema, request: Reques
 
     try:
         chunk_model = ChunkModel.create_instance(db_client=request.app.state.db_client)
-        
-        project_model = ProjectModel.create_instance(db_client=request.app.state.db_client)
+
+        project_model = ProjectModel.create_instance(
+            db_client=request.app.state.db_client
+        )
         project = await project_model.get_project_or_create_one(project_id=project_id)
 
-        if data_schema.do_reset: #pyright: ignore[reportArgumentType]
+        if data_schema.do_reset:  # pyright: ignore[reportArgumentType]
             # Clear existing chunks for the project
             _ = await chunk_model.clear_chunks_by_project_id(
                 project_id=project.project_id  # pyright: ignore[reportArgumentType]

@@ -11,7 +11,7 @@ class AssetModel(BaseDataModel):
         self.collection = self.db_client[DataBaseEnum.COLLECTION_ASSET_NAME.value]
 
     async def init_collection(self):
-        all_collections = self.db_client.list_collection_names()
+        all_collections = await self.db_client.list_collection_names()
         if DataBaseEnum.COLLECTION_ASSET_NAME.value not in all_collections:
             await self.db_client.create_collection(
                 DataBaseEnum.COLLECTION_ASSET_NAME.value
@@ -19,7 +19,7 @@ class AssetModel(BaseDataModel):
             indexes = Asset.get_indexes()
             for index in indexes:
                 await self.collection.create_index(
-                    key=index["key"],
+                    keys=index["key"],
                     name=index["name"],
                     unique=index.get("unique", False),
                 )

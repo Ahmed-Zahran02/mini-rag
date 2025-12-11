@@ -26,8 +26,13 @@ class Settings(BaseSettings):
     INPUT_MAX_CHARACTERS:int
     GENERATION_MAX_TOKENS:int
     GENERATION_TEMPERATURE:int
+    
+    VECTORDB_TYPE: str
+    VECTORDB_HOST: str
+    VECTORDB_PORT: int
+    VECTORDB_PATH: str
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 
 def get_settings() -> Settings:
-    return Settings()
+    return Settings() 

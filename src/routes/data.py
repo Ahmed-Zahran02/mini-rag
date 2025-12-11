@@ -32,12 +32,7 @@ async def upload_file(
     asset_model = await AssetModel.create_instance(
         db_client=request.app.state.db_client
     )
-    asset = Asset(
-        asset_project_id=project.id,
-        asset_name=file.filename,
-        asset_type=file.content_type,
-        asset_size=os.fstat(file.file.fileno()).st_size,
-    )
+  
     asset_record = await asset_model.create_asset(Asset(
         asset_project_id=project.id,
         asset_name=file.filename,
@@ -58,7 +53,7 @@ async def upload_file(
     file_path, file_id = data_controller.generate_unique_filepath(
         original_filename=file.filename, file_name=project_id
     )
-
+    
     # Write the file in chunks to avoid memory issues with large files
     try:
         async with aiofiles.open(file_path, "wb") as out_file:

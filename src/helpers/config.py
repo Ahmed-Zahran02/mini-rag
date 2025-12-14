@@ -6,7 +6,6 @@ class Settings(BaseSettings):
     # Define the settings schema
     APP_NAME: str
     APP_VERSION: str
-    OPENAI_API_KEY: str
     FILE_ALLOWED_TYPES: list
     FILE_MAX_SIZE: int  # in MB
     DATA_DIR: Path
@@ -14,9 +13,9 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     DATABASE_NAME: str
 
-    GENERATION_BACKEND="OPENAI"
-    EMBEDDING_BACKEND="COHERE"
-    OPENAI_API_URL: str 
+    GENERATION_BACKEND:str
+    EMBEDDING_BACKEND:str
+    OPENAI_API_KEY: str 
     COHERE_API_KEY: str
 
     GENERATION_MODEL_ID: str
@@ -25,7 +24,7 @@ class Settings(BaseSettings):
 
     INPUT_MAX_CHARACTERS:int
     GENERATION_MAX_TOKENS:int
-    GENERATION_TEMPERATURE:int
+    GENERATION_TEMPERATURE:float
     
     VECTORDB_TYPE: str
     VECTORDB_HOST: str

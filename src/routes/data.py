@@ -89,9 +89,9 @@ async def process_file(project_id: str, data_schema: DataSchema, request: Reques
         )
 
     try:
-        chunk_model = ChunkModel.create_instance(db_client=request.app.state.db_client)
+        chunk_model = await ChunkModel.create_instance(db_client=request.app.state.db_client)
 
-        project_model = ProjectModel.create_instance(
+        project_model = await ProjectModel.create_instance(
             db_client=request.app.state.db_client
         )
         project = await project_model.get_project_or_create_one(project_id=project_id)

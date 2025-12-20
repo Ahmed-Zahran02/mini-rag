@@ -3,7 +3,7 @@ from typing import Optional
 
 import cohere
 
-from ..LLMEnums import CoHereInputTypes, CoHereRoles
+from ..LLMEnums import DocumentTypes, CoHereRoles
 from ..LLMInterface import LLMInterface
 
 
@@ -40,14 +40,14 @@ class CoHereProvider(LLMInterface):
             return text[: self.max_input_characters]
         return text
 
-    def embed_text(self, text: str, input_type: str = CoHereInputTypes.DOCUMENT.value):
+    def embed_text(self, text: str, input_type: str = DocumentTypes.DOCUMENT.value):
         if not self.embedding_model:
             self.logger.error("Embedding model is not set.")
             return None
         if not text:
             self.logger.warning("Input text is empty.")
             return None
-        if input_type not in [item.value for item in CoHereInputTypes]:
+        if input_type not in [item.value for item in DocumentTypes]:
             self.logger.warning(f"Input type {input_type} is not recognized.")
             return None
         try:
@@ -63,7 +63,7 @@ class CoHereProvider(LLMInterface):
         self,
         prompt: str,
         max_tokens: int = None,
-        temperature: float = None,
+        temperature: float = 0.5,
         history: Optional[list] = None,
     ) -> str:
         if not self.generation_model:

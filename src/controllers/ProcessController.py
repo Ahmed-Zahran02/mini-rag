@@ -3,8 +3,8 @@ from typing_extensions import Optional
 from .BaseController import BaseController
 from .ProjectController import ProjectController
 import os
-from langchain.document_loaders import TextLoader, PyMuPDFLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import TextLoader, PyMuPDFLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from models import ProcessingType, ResponseSignal
 
 

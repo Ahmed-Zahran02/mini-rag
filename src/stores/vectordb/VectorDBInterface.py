@@ -40,5 +40,11 @@ class VectorDBInterface(ABC):
         vectors: List[List],
         metadatas: List[Dict] = None,
         ids: List[str] = None,
-    ):
+    ) -> bool:
+        pass
+
+    @abstractmethod
+    def search_by_vector(
+        self, collection_name: str, vector: List, limit: int = 3
+    ) -> List[Dict]:
         pass

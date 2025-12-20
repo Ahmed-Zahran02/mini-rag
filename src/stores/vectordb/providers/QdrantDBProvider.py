@@ -1,4 +1,5 @@
 from logging import Logger
+from typing import Dict, List
 
 from qdrant_client import QdrantClient, models
 
@@ -112,3 +113,30 @@ class QdrantDBProvider(VectorDBInterface):
         except Exception as e:
             self.logger.error(f"Insert many error: {e}")
             return False
+
+    def search_by_vector(
+        self, collection_name: str, vector: List, limit: int = 3
+    ) -> List[Dict]:
+        """Searches for similar vectors in the specified collection."""
+        if not self.client:
+            self.connect()
+        if not self.collection_exists(collection_name):
+            self.logger.info(f"Collection {collection_name} does not exist.")
+            return []
+        try:
+            results = self.client.query_points(
+                collection_name=collection_name,
+                query_vector=vector,
+                limit=limit,
+            ).points
+            return [
+                {
+                    "id": result.id,
+                    "score": result.score,
+                    "metadata": result.payload,
+                }
+                for result in results
+            ]
+        except Exception as e:
+            self.logger.error(f"Search by vector error: {e}")
+            return []

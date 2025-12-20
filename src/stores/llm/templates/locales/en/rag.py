@@ -24,6 +24,6 @@ footer_prompt = Template(
     """
     Based on the following context, please answer the question. If the answer cannot be found in the context, say so.
 Question: {question}
-
+$query
 Answer:"""
 )

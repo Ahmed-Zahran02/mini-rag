@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     EMBEDDING_BACKEND:str
     OPENAI_API_KEY: str 
     COHERE_API_KEY: str
+    GEMINI_API_KEY: str
 
     GENERATION_MODEL_ID: str
     EMBEDDING_MODEL_ID: str
@@ -30,6 +31,10 @@ class Settings(BaseSettings):
     VECTORDB_HOST: str
     VECTORDB_PORT: int
     VECTORDB_PATH: str
+    
+    PRIMARY_LANG: str
+    DEFAULT_LANG: str
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 

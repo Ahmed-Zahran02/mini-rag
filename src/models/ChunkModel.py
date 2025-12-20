@@ -1,4 +1,7 @@
 import logging
+
+from bson import ObjectId
+from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo import InsertOne
 
 from .BaseDataModel import BaseDataModel
@@ -7,7 +10,7 @@ from .enums import DataBaseEnum
 
 
 class ChunkModel(BaseDataModel):
-    def __init__(self, db_client: object):
+    def __init__(self, db_client: AsyncIOMotorDatabase):
         super().__init__(db_client=db_client)
         self.collection = self.db_client[  # pyright: ignore[reportIndexIssue]
             DataBaseEnum.COLLECTION_CHUNK_NAME.value
@@ -24,7 +27,7 @@ class ChunkModel(BaseDataModel):
             )
             indexes = DataChunk.get_indexes()
             for index in indexes:
-                self.collection.create_index(
+                await self.collection.create_index(
                     index["key"], name=index["name"], unique=index.get("unique", False)
                 )
 
@@ -84,4 +87,19 @@ class ChunkModel(BaseDataModel):
             return result.deleted_count
         except Exception as e:
             logging.error(f"Error deleting chunks by project id: {e}")
+            raise e
+
+    async def get_chunks_by_project_id(
+        self, project_id: ObjectId, page_no: int = 1, page_size: int = 1
+    )-> list[DataChunk]:
+        """Retrieve chunks by project ID with pagination."""
+        try:
+            records = (
+                self.collection.find({"chunk_project_id": project_id})
+                .skip(page_size * (page_no - 1))
+                .limit(page_size)
+            )
+            return [DataChunk(**record) async for record in records]
+        except Exception as e:
+            logging.error(f"Error retrieving chunks by project id: {e}")
             raise e

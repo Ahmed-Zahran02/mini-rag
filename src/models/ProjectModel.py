@@ -1,10 +1,11 @@
+from motor.motor_asyncio import AsyncIOMotorDatabase
 from .db_schema import Project
 from .BaseDataModel import BaseDataModel
 from .enums import DataBaseEnum
 
 
 class ProjectModel(BaseDataModel):
-    def __init__(self, db_client: object):
+    def __init__(self, db_client: AsyncIOMotorDatabase):
         super().__init__(db_client=db_client)
         self.collection = self.db_client[  # pyright: ignore[reportIndexIssue]
             DataBaseEnum.COLLECTION_PROJECT_NAME.value

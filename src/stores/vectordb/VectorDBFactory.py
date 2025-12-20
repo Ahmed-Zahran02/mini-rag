@@ -5,7 +5,7 @@ from .VectorDBEnums import VectorDBType
 
 
 class VectorDBFactory:
-    def __init__(self, config: Dict):
+    def __init__(self, config):
         self.config = config
 
     def create(self, vectordb: str):

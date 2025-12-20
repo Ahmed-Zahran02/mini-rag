@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from openai import OpenAI
 
@@ -41,7 +42,7 @@ class OpenAIProvider(LLMInterface):
             return text[: self.max_input_characters]
         return text
 
-    def embed_text(self, text: str, input_type: str):
+    def embed_text(self, text: str, input_type: Optional[str]):
         if not self.embedding_model:
             self.logger.error("Embedding model is not set.")
             return None

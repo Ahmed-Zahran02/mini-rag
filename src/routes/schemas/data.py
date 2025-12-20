@@ -8,3 +8,6 @@ class DataSchema(BaseModel):
     overlap: Optional[int] = 10  # Default overlap size in KB
     do_reset: Optional[bool] = True  # Default is not to reset
     
+class RetrievedData(BaseModel):
+    text: str
+    score: float

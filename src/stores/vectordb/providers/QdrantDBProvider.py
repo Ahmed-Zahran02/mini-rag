@@ -3,6 +3,8 @@ from typing import Dict, List
 
 from qdrant_client import QdrantClient, models
 
+from routes.schemas import RetrievedData
+
 from ..VectorDBInterface import VectorDBInterface
 
 
@@ -116,7 +118,7 @@ class QdrantDBProvider(VectorDBInterface):
 
     def search_by_vector(
         self, collection_name: str, vector: List, limit: int = 3
-    ) -> List[Dict]:
+    ) -> List[RetrievedData]:
         """Searches for similar vectors in the specified collection."""
         if not self.client:
             self.connect()
@@ -129,12 +131,10 @@ class QdrantDBProvider(VectorDBInterface):
                 query_vector=vector,
                 limit=limit,
             ).points
+            if not results:
+                return []
             return [
-                {
-                    "id": result.id,
-                    "score": result.score,
-                    "metadata": result.payload,
-                }
+                RetrievedData(**{"text": result.payload.text, "score": result.score})
                 for result in results
             ]
         except Exception as e:

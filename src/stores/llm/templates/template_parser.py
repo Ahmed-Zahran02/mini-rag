@@ -26,7 +26,7 @@ class TemplateParser:
                 f"Template file not found for group '{group}' in language '{self.language}'"
             )
         module = __import__(
-            f"mini_rag.src.stores.llm.templates.locales.{self.language}.{group}",
+            f"stores.llm.templates.locales.{self.language}.{group}",
             fromlist=[group],
         )
         if not module:

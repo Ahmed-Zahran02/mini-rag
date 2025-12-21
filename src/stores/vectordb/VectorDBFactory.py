@@ -10,6 +10,7 @@ class VectorDBFactory:
 
     def create(self, vectordb: str):
         if vectordb == VectorDBType.QDRANT.value:
-            host = self.config.get("VECTORDB_HOST", "localhost")
-            port = self.config.get("VECTORDB_PORT", 6333)
-            return QdrantDBProvider(host=host, port=port)
+            return QdrantDBProvider(
+                vectordb_path=self.config.VECTORDB_PATH,
+                embedding_size=self.config.EMBEDDING_SIZE,
+            )

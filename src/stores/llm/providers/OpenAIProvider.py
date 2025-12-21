@@ -4,6 +4,7 @@ from typing import Optional
 from openai import OpenAI
 
 from ..LLMEnums import OpenAIRoles
+from ..LLMExceptions import EmbeddingException, GenerationException
 from ..LLMInterface import LLMInterface
 
 
@@ -11,7 +12,7 @@ class OpenAIProvider(LLMInterface):
     def __init__(
         self,
         api_key: str,
-        base_url: str = None,
+        base_url: str | None = None,
         max_input_characters: int = 1000,
         max_tokens: int = 1000,
         temperature: float = 0.2,
@@ -24,7 +25,10 @@ class OpenAIProvider(LLMInterface):
         self.generation_model = None
         self.embedding_model = None
         self.embedding_size = None
-        self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+        self.client = OpenAI(
+            api_key=self.api_key,
+            base_url=self.base_url,
+        )
         self.logger = logging.getLogger(__name__)
 
     def set_generation_model(self, model_name: str):
@@ -42,47 +46,40 @@ class OpenAIProvider(LLMInterface):
             return text[: self.max_input_characters]
         return text
 
-    def embed_text(self, text: str, input_type: Optional[str]):
+    def embed_text(self, text: str, input_type: Optional[str] = None):
         if not self.embedding_model:
-            self.logger.error("Embedding model is not set.")
-            return None
+            raise EmbeddingException("Embedding model is not set.")
         if not text:
-            self.logger.warning("Input text is empty.")
-            return None
+            raise EmbeddingException("Input text is empty.")
         try:
             response = self.client.embeddings.create(
                 input=text, model=self.embedding_model
             )
             return response.data[0].embedding
         except Exception as e:
-            self.logger.error(f"Error in embedding text: {e}")
-            return None
+            raise EmbeddingException(f"Failed to generate embedding: {str(e)}") from e
 
     def generate_text(
-        self, prompt: str, max_tokens: int, temperature: float, history: list = []
+        self, prompt: str, max_tokens: int, temperature: float = 0.7, history: list = []
     ) -> str:
         if not self.generation_model:
-            self.logger.error("Generation model is not set.")
-            return ""
+            raise GenerationException("Generation model is not set.")
         if not self.client:
-            self.logger.error("OpenAI client is not initialized.")
-            return ""
+            raise GenerationException("OpenAI client is not initialized.")
         try:
             history.append(self.construct_prompt(OpenAIRoles.USER.value, prompt))
             temperature = temperature if temperature is not None else self.temperature
             max_tokens = max_tokens if max_tokens is not None else self.max_tokens
 
-            response = self.client.completions.create(
+            response = self.client.chat.completions.create(
                 model=self.generation_model,
-                prompt=history,
+                messages=history,
                 max_tokens=max_tokens,
                 temperature=temperature,
             )
-
-            return response.choices[0].text.strip()
+            return response.choices[0].message.content.strip()
         except Exception as e:
-            self.logger.error(f"Error in generating text: {e}")
-            return ""
+            raise GenerationException(f"Failed to generate text: {str(e)}") from e
 
     def construct_prompt(self, role: str, content: str):
         return {"role": role, "content": content}

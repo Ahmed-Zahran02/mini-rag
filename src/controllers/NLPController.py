@@ -5,6 +5,7 @@ from fastapi import Request
 
 from models.db_schema import DataChunk, Project
 from stores.llm.LLMEnums import DocumentTypes
+from stores.llm.LLMExceptions import EmbeddingException
 
 from .BaseController import BaseController
 
@@ -24,11 +25,20 @@ class NLPController(BaseController):
         """Indexes and pushes data into the vector database for a given project."""
         try:
             texts = [chunk.chunk_content for chunk in chunks]
-            metadatas = [chunk.chunk_metadata for chunk in chunks]
+            metadatas = [
+                {**chunk.chunk_metadata, "content": chunk.chunk_content}
+                for chunk in chunks
+            ]
             vectors = [self.embedding_client.embed_text(text=text) for text in texts]
-            _ = self.vectordb_client.create_collection(
+            flag = self.vectordb_client.create_collection(
                 collection_name=project.project_id
             )
+            if not flag:
+                self.logger.error(
+                    f"Failed to create collection for project {project.project_id}"
+                )
+                return False
+
             _ = self.vectordb_client.insert_many(
                 collection_name=project.project_id,
                 vectors=vectors,
@@ -46,6 +56,8 @@ class NLPController(BaseController):
             collection_info = self.vectordb_client.get_collection_info(
                 collection_name=project.project_id
             )
+            if not collection_info:
+                raise ValueError(f"Collection {project.project_id} not found")
             return collection_info
         except Exception as e:
             self.logger.error(f"Error retrieving index info: {e}")
@@ -59,34 +71,33 @@ class NLPController(BaseController):
             text=query, input_type=DocumentTypes.DOCUMENT.value
         )
         if vector is None or len(vector) == 0:
-            self.logger.error("Failed to generate embedding for the query.")
-            return []
+            raise EmbeddingException("Embedding returned empty vector.")
+
         res = self.vectordb_client.search_by_vector(
             collection_name=project.project_id, vector=vector, limit=limit
         )
         if res is None:
-            self.logger.error("Search in vector database failed.")
-            return []
+            raise Exception(
+                f"Vector DB search failed for collection: {project.project_id}"
+            )
         return res
 
-    async def generate_response(
-        self, project: Project, query: str, limit: int = 3
-    ) -> str:
+    async def generate_response(self, project: Project, query: str, limit: int = 3):
         """Generates a response using the generation model for a given prompt."""
         docs = await self.search_vectordb_collection(project, query, limit)
 
         if not docs:
             self.logger.error("No documents found in vector database.")
-            return "No documents found in vector database."
+            return None
 
         # construct prompt
-        sys_prompt = self.template_parser.get_template("rag", "system_prompt")
+        sys_prompt = self.template_parser.get_template("rag", "system_prompt", {})
         doc_prompt = "/n".join(
             [
                 self.template_parser.get_template(
                     "rag",
                     "document_prompt",
-                    {"doc_number": i + 1, "doc_content": doc.content},
+                    {"doc_number": i + 1, "doc_content": doc.text},
                 )
                 for i, doc in enumerate(docs)
             ]
@@ -96,12 +107,10 @@ class NLPController(BaseController):
         )
 
         chat_history = [
-            self.generation_client.construct_prompt(
-                role=self.generation_client.enum.SYSTEM.value, content=sys_prompt
-            ),
+            self.generation_client.construct_prompt(role="system", content=sys_prompt),
         ]
         full_prompt = "/n".join([doc_prompt, footer_prompt])
-        response = await self.generation_client.generate_text(
+        response = self.generation_client.generate_text(
             prompt=full_prompt, max_tokens=256, history=chat_history
         )
-        return response
+        return response, full_prompt, chat_history

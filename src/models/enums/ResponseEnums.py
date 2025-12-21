@@ -20,3 +20,6 @@ class ResponseSignal(Enum):
     SEARCH_COMPLETED = "Search completed successfully"
     GENERATION_FAILED = "Response generation failed"
     GENERATION_COMPLETED = "Response generated successfully"
+    INFO_NOT_FOUND = "Information not found"
+    SEARCH_FAILED = "Search failed"
+    NO_RESULTS_FOUND = "No results found"

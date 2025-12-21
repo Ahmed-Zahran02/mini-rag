@@ -13,25 +13,26 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     DATABASE_NAME: str
 
-    GENERATION_BACKEND:str
-    EMBEDDING_BACKEND:str
-    OPENAI_API_KEY: str 
+    GENERATION_BACKEND: str
+    EMBEDDING_BACKEND: str
+    OPENAI_API_KEY: str
+    OPENAI_BASE_URL: str
     COHERE_API_KEY: str
     GEMINI_API_KEY: str
 
     GENERATION_MODEL_ID: str
     EMBEDDING_MODEL_ID: str
-    EMBEDDING_MODEL_SIZE:int
+    EMBEDDING_SIZE: int
 
-    INPUT_MAX_CHARACTERS:int
-    GENERATION_MAX_TOKENS:int
-    GENERATION_TEMPERATURE:float
-    
+    INPUT_MAX_CHARACTERS: int
+    GENERATION_MAX_TOKENS: int
+    TEMPERATURE: float
+
     VECTORDB_TYPE: str
     VECTORDB_HOST: str
     VECTORDB_PORT: int
     VECTORDB_PATH: str
-    
+
     PRIMARY_LANG: str
     DEFAULT_LANG: str
 
@@ -39,4 +40,4 @@ class Settings(BaseSettings):
 
 
 def get_settings() -> Settings:
-    return Settings() 
+    return Settings()

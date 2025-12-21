@@ -48,3 +48,7 @@ class VectorDBInterface(ABC):
         self, collection_name: str, vector: List, limit: int = 3
     ) -> List[Dict]:
         pass
+
+    @abstractmethod
+    def get_collection_info(self, collection_name: str) -> Dict:
+        pass

@@ -90,8 +90,8 @@ class ChunkModel(BaseDataModel):
             raise e
 
     async def get_chunks_by_project_id(
-        self, project_id: ObjectId, page_no: int = 1, page_size: int = 1
-    )-> list[DataChunk]:
+        self, project_id: str, page_no: int = 1, page_size: int = 1
+    ) -> list[DataChunk]:
         """Retrieve chunks by project ID with pagination."""
         try:
             records = (

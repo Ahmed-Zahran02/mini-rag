@@ -32,13 +32,15 @@ async def upload_file(
     asset_model = await AssetModel.create_instance(
         db_client=request.app.state.db_client
     )
-  
-    asset_record = await asset_model.create_asset(Asset(
-        asset_project_id=project.id,
-        asset_name=file.filename,
-        asset_type=file.content_type,
-        asset_size=os.fstat(file.file.fileno()).st_size,
-    ))
+
+    asset_record = await asset_model.create_asset(
+        Asset(
+            asset_project_id=project.id,
+            asset_name=file.filename,
+            asset_type=file.content_type,
+            asset_size=os.fstat(file.file.fileno()).st_size,
+        )
+    )
     # Validate the uploaded file
     data_controller = DataController()
     result, signal = data_controller.validate_uploaded_file(file=file)
@@ -53,7 +55,7 @@ async def upload_file(
     file_path, file_id = data_controller.generate_unique_filepath(
         original_filename=file.filename, file_name=project_id
     )
-    
+
     # Write the file in chunks to avoid memory issues with large files
     try:
         async with aiofiles.open(file_path, "wb") as out_file:
@@ -89,7 +91,9 @@ async def process_file(project_id: str, data_schema: DataSchema, request: Reques
         )
 
     try:
-        chunk_model = await ChunkModel.create_instance(db_client=request.app.state.db_client)
+        chunk_model = await ChunkModel.create_instance(
+            db_client=request.app.state.db_client
+        )
 
         project_model = await ProjectModel.create_instance(
             db_client=request.app.state.db_client
@@ -120,12 +124,12 @@ async def process_file(project_id: str, data_schema: DataSchema, request: Reques
             for i, chunk in enumerate(chunks)
         ]
 
-        result = await chunk_model.insert_many_chunks(chunks=file_chunks)
+        _ = await chunk_model.insert_many_chunks(chunks=file_chunks)
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content={
                 "message": ResponseSignal.PROCESSING_SUCCESS.value,
-                "chunks data": result,
+                "chunks count": len(file_chunks),
             },
         )
     except Exception as e:

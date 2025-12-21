@@ -6,6 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+# Qdrant storage
+qdrant_db/
+storage/
+
 # Distribution / packaging
 .Python
 build/

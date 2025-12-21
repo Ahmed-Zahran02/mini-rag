@@ -1,3 +1,4 @@
+import uuid
 from logging import Logger
 from typing import Dict, List
 
@@ -9,21 +10,24 @@ from ..VectorDBInterface import VectorDBInterface
 
 
 class QdrantDBProvider(VectorDBInterface):
-    def __init__(self, host: str = "localhost", port: int = 6333):
-        self.host = host
-        self.port = port
-        self.client = QdrantClient(host=self.host, port=self.port)
+    def __init__(self, vectordb_path: str, embedding_size: int):
+        self.db_path = vectordb_path
+        self.client = QdrantClient(path=self.db_path)
         self.logger = Logger("__name__")
+        self.embedding_size = embedding_size
 
     def connect(self) -> bool:
         try:
-            self.client = QdrantClient(host=self.host, port=self.port)
+            if not self.client:
+                self.client = QdrantClient(path=self.db_path)
             return True
         except Exception as e:
             self.logger.error(f"Connection error: {e}")
             return False
 
     def disconnect(self) -> bool:
+        if self.client:
+            self.client.close()
         self.client = None
         return True
 
@@ -38,7 +42,9 @@ class QdrantDBProvider(VectorDBInterface):
                 return True
             self.client.create_collection(
                 collection_name=collection_name,
-                vectors=models.VectorParams(size=1536, distance=models.Distance.COSINE),
+                vectors_config=models.VectorParams(
+                    size=self.embedding_size, distance=models.Distance.COSINE
+                ),
             )
             return True
         except Exception as e:
@@ -100,16 +106,25 @@ class QdrantDBProvider(VectorDBInterface):
                 self.logger.info(f"Collection {collection_name} does not exist.")
                 return False
 
+            points = []
+            for i in range(len(vectors)):
+                payload = metadatas[i].copy() if metadatas and metadatas[i] else {}
+                # Store original ID in metadata for reference
+                if ids and ids[i]:
+                    payload["original_id"] = ids[i]
+
+                points.append(
+                    models.PointStruct(
+                        id=uuid.uuid4().hex,
+                        vector=vectors[i],
+                        payload=payload,
+                    )
+                )
+
             _ = self.client.upsert(
                 collection_name=collection_name,
-                points=[
-                    models.PointStruct(
-                        id=ids[i] if ids else None,
-                        vector=vectors[i],
-                        payload=metadatas[i] if metadatas else None,
-                    )
-                    for i in range(len(vectors))
-                ],
+                points=points,
+                wait=True,
             )
             return True
         except Exception as e:
@@ -128,15 +143,40 @@ class QdrantDBProvider(VectorDBInterface):
         try:
             results = self.client.query_points(
                 collection_name=collection_name,
-                query_vector=vector,
+                query=vector,
                 limit=limit,
             ).points
             if not results:
-                return []
+                self.logger.info(
+                    f"No results found for vector {vector} in collection {collection_name}."
+                )
+
             return [
-                RetrievedData(**{"text": result.payload.text, "score": result.score})
+                RetrievedData(
+                    text=result.payload.get("content", str(result.payload)),
+                    score=result.score,
+                )
                 for result in results
             ]
         except Exception as e:
             self.logger.error(f"Search by vector error: {e}")
             return []
+
+    def get_collection_info(self, collection_name: str) -> Dict:
+        """Retrieves information about the specified collection."""
+        if not self.client:
+            self.connect()
+        if not self.collection_exists(collection_name):
+            self.logger.info(f"Collection {collection_name} does not exist.")
+            return {}
+        try:
+            collection = self.client.get_collection(collection_name=collection_name)
+            return {
+                "status": collection.status,
+                "indexed_vectors_count": collection.indexed_vectors_count,
+                "points_count": collection.points_count,
+                "segments_count": collection.segments_count,
+            }
+        except Exception as e:
+            self.logger.error(f"Get collection info error: {e}")
+            return {}
